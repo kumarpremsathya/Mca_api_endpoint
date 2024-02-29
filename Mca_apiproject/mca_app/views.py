@@ -1,9 +1,8 @@
+#mca api end point
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
+
 from .models import *
 from datetime import datetime
 from django.http import Http404
@@ -149,90 +148,6 @@ class GetOrderDateView(APIView):
 
 
 
-# class DownloadPDFsView(APIView):
-#     def get(self, request, *args, **kwargs):
-#         try:
-#             limit = int(request.GET.get('limit', 50))
-#             offset = int(request.GET.get('offset', 0))
-            
-#             # Check if the limit is above 500 and raise an exception if so
-#             if limit > 500:
-#                 return Response({"result": "Limit should not exceed 500"}, status=status.HTTP_400_BAD_REQUEST)
-#         except ValueError as ve:
-#             return Response({"result": str(ve)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-#         date = request.GET.get('date')
-#         type_of_order = kwargs.get('type_of_order')  # Extract 'type_of_order ' parameter from URL
-        
-#         BASE_DIR2 = 'C:\\Users\\Premkumar.8265\\Desktop\\'  # Update with your base directory
-#         print("BASE_DIR2: ", BASE_DIR2)
-        
-#         try:
-#             if date:
-#                 try:
-#                     validate_date(date)
-#                 except ValidationError:
-#                     return Response({"result": "Incorrect date format, should be YYYY-MM-DD"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-#                 valid_parameters = {'limit', 'offset', 'date'}
-#                 provided_parameters = set(request.GET.keys())
-
-#                 if not valid_parameters.issuperset(provided_parameters):
-#                     return Response({"result": "Invalid query parameters, check spelling for given parameters"}, status=status.HTTP_400_BAD_REQUEST)
-
-#                 root_directory = os.path.join(settings.MEDIA_ROOT, type_of_order)
-#                 print("Root directory:", root_directory)  # Check the root directory
-
-#                 year, month, day = date.split('-')
-#                 month_name = calendar.month_name[int(month)]
-#                 print("Year:", year)  # Check the year
-#                 print("Month:", month_name)  # Check the month name
-                
-#                 # Retrieve all orders for the specified date
-#                 order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order=type_of_order)[offset:limit]
-
-#                 print("order_details:", order_details)  
-                
-#                 pdf_paths = [os.path.join(BASE_DIR2, order.pdf_file_path) for order in order_details]
-
-#                 print("PDF paths:", pdf_paths)  # Check the PDF paths
-                
-#                 if pdf_paths:
-#                     temp_file = tempfile.NamedTemporaryFile(delete=False)
-#                     with zipfile.ZipFile(temp_file, 'w') as zip_file:
-#                         for pdf_path in pdf_paths:
-#                             if os.path.exists(pdf_path):
-#                                 zip_file.write(pdf_path, os.path.relpath(pdf_path, BASE_DIR2))
-#                             else:
-#                                 # If the PDF file is missing, log an error or return a message
-#                                 print("Error: The file does not exist:", pdf_path)
-#                                 return Response({"result": f"PDF file {pdf_path} is missing"}, status=status.HTTP_404_NOT_FOUND)
-
-#                     temp_file.close()
-#                     temp_file = open(temp_file.name, 'rb')
-#                     data = temp_file.read()
-#                     temp_file.close()
-#                     os.unlink(temp_file.name)
-                    
-#                     response = HttpResponse(data, content_type='application/zip')
-#                     response['Content-Disposition'] = 'attachment; filename="Mca_pdf_files.zip"'
-                    
-#                     return response
-#                 else:
-#                     return HttpResponse("No PDF files found for the specified date.", status=status.HTTP_404_NOT_FOUND)
-#             else:
-#                 return HttpResponse("Date parameter is required.", status=status.HTTP_400_BAD_REQUEST)
-#         except ValueError:
-#             return HttpResponse("Invalid limit or offset value, must be an integer", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-#         except ValidationError:
-#             return HttpResponse("Incorrect date format, should be YYYY-MM-DD", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
-#         except Exception as e:
-#             print("Error:", e)  # Debugging statement
-#             return HttpResponse("An error occurred.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
-   
 class DownloadPDFsView(APIView):
     def get(self, request, *args, **kwargs):
         try:
@@ -241,16 +156,14 @@ class DownloadPDFsView(APIView):
             
             # Check if the limit is above 500 and raise an exception if so
             if limit > 500:
-                raise ValueError("Limit should not exceed 500")
+                return Response({"result": "Limit should not exceed 500"}, status=status.HTTP_400_BAD_REQUEST)
         except ValueError as ve:
             return Response({"result": str(ve)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        date = str(request.GET.get('date', None))
+        date = request.GET.get('date')
         type_of_order = kwargs.get('type_of_order')  # Extract 'type_of_order ' parameter from URL
         
-        
-        # Build paths inside the project like this: BASE_DIR2 / 'subdir'.
-        BASE_DIR2 = 'C:\\Users\\Premkumar.8265\\Desktop\\'
+        BASE_DIR2 = 'C:\\Users\\Premkumar.8265\\Desktop\\'  # Update with your base directory
         print("BASE_DIR2: ", BASE_DIR2)
         
         try:
@@ -266,57 +179,46 @@ class DownloadPDFsView(APIView):
                 if not valid_parameters.issuperset(provided_parameters):
                     return Response({"result": "Invalid query parameters, check spelling for given parameters"}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Define the root directory based on type_of_order
                 root_directory = os.path.join(settings.MEDIA_ROOT, type_of_order)
-                print("root_directory : ", root_directory)
-                 
-               # Extract year and month from the date
-                year, month, _ = date.split('-')
-                
-                # Get the month name from the month number
+                print("Root directory:", root_directory)  # Check the root directory
+
+                year, month, day = date.split('-')
                 month_name = calendar.month_name[int(month)]
-
-                # Construct the directory path based on date
-                directory_path = os.path.join(root_directory, year, month_name)
-                print("directory_path : ", directory_path)
+                print("Year:", year)  # Check the year
+                print("Month:", month_name)  # Check the month name
                 
-                # Check if the directory exists
-                if not os.path.exists(directory_path):
-                    return Response("Directory not found.", status=404)
+                # Retrieve all orders for the specified date
+                order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order=type_of_order)[offset:limit]
 
-                # Query the necessary number of PDFs based on both limit and offset parameters
-                order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order=type_of_order).values('pdf_file_name')[offset:limit]
-                print("order_details : ", order_details)
+                print("order_details:", order_details)  
+                
+                pdf_paths = [os.path.join(BASE_DIR2, order.pdf_file_path) for order in order_details]
 
-                # Filter the PDFs based on sr_no values
-                pdf_paths = [os.path.join(directory_path, entry['pdf_file_name']) for entry in order_details if entry['pdf_file_name']]
-                print("pdf_paths : ", pdf_paths)
+                print("PDF paths:", pdf_paths)  # Check the PDF paths
                 
                 if pdf_paths:
-                    # Create an HttpResponse object with content type as zip
-                    response = HttpResponse(content_type='application/zip')
-
-                    # Set the zip file name
-                    response['Content-Disposition'] = 'attachment; filename="Sebi_pdf_files.zip"'
-                    
-                    
-                    # Create a zip file
-                    with zipfile.ZipFile(response, 'w') as zip_file:
-                        # Add each PDF file to the zip
+                    temp_file = tempfile.NamedTemporaryFile(delete=False)
+                    with zipfile.ZipFile(temp_file, 'w') as zip_file:
                         for pdf_path in pdf_paths:
-                            pdf_file = os.path.join(settings.MEDIA_ROOT, pdf_path + '.pdf')  # Append .pdf if not already present
-                            if os.path.exists(pdf_file):
-                                zip_file.write(pdf_file, arcname=os.path.basename(pdf_file))
-                    
-                                print("zip_file : ", zip_file)
+                            if os.path.exists(pdf_path):
+                                zip_file.write(pdf_path, os.path.relpath(pdf_path, BASE_DIR2))
                             else:
                                 # If the PDF file is missing, log an error or return a message
-                                print(f"PDF file {pdf_file} is missing from the media folder")                                     # You can log this error or return a response indicating the missing file # For example, you can 
-                                return Response({"result": f"PDF file {pdf_file} is missing"}, status=status.HTTP_404_NOT_FOUND)
+                                print("Error: The file does not exist:", pdf_path)
+                                return Response({"result": f"PDF file {pdf_path} is missing"}, status=status.HTTP_404_NOT_FOUND)
+
+                    temp_file.close()
+                    temp_file = open(temp_file.name, 'rb')
+                    data = temp_file.read()
+                    temp_file.close()
+                    os.unlink(temp_file.name)
+                    
+                    response = HttpResponse(data, content_type='application/zip')
+                    response['Content-Disposition'] = 'attachment; filename="Mca_pdf_files.zip"'
+                    
                     return response
                 else:
-                    # If no PDF files were found, return an empty response
-                    return HttpResponse("No PDF files found.", status=404)
+                    return HttpResponse("No PDF files found for the specified date.", status=status.HTTP_404_NOT_FOUND)
             else:
                 return HttpResponse("Date parameter is required.", status=status.HTTP_400_BAD_REQUEST)
         except ValueError:
@@ -325,7 +227,104 @@ class DownloadPDFsView(APIView):
             return HttpResponse("Incorrect date format, should be YYYY-MM-DD", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         except Exception as e:
             print("Error:", e)  # Debugging statement
-            return HttpResponse("An error occurred.", status=500)
+            return HttpResponse("An error occurred.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+   
+# class DownloadPDFsView(APIView):
+#     def get(self, request, *args, **kwargs):
+#         try:
+#             limit = int(request.GET.get('limit', 50))
+#             offset = int(request.GET.get('offset', 0))
+            
+#             # Check if the limit is above 500 and raise an exception if so
+#             if limit > 500:
+#                 raise ValueError("Limit should not exceed 500")
+#         except ValueError as ve:
+#             return Response({"result": str(ve)}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+#         date = str(request.GET.get('date', None))
+#         type_of_order = kwargs.get('type_of_order')  # Extract 'type_of_order ' parameter from URL
+        
+        
+#         # Build paths inside the project like this: BASE_DIR2 / 'subdir'.
+#         BASE_DIR2 = 'C:\\Users\\Premkumar.8265\\Desktop\\'
+#         print("BASE_DIR2: ", BASE_DIR2)
+        
+#         try:
+#             if date:
+#                 try:
+#                     validate_date(date)
+#                 except ValidationError:
+#                     return Response({"result": "Incorrect date format, should be YYYY-MM-DD"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+#                 valid_parameters = {'limit', 'offset', 'date'}
+#                 provided_parameters = set(request.GET.keys())
+
+#                 if not valid_parameters.issuperset(provided_parameters):
+#                     return Response({"result": "Invalid query parameters, check spelling for given parameters"}, status=status.HTTP_400_BAD_REQUEST)
+
+#                 # Define the root directory based on type_of_order
+#                 root_directory = os.path.join(settings.MEDIA_ROOT, type_of_order)
+#                 print("root_directory : ", root_directory)
+                 
+#                # Extract year and month from the date
+#                 year, month, _ = date.split('-')
+                
+#                 # Get the month name from the month number
+#                 month_name = calendar.month_name[int(month)]
+
+#                 # Construct the directory path based on date
+#                 directory_path = os.path.join(root_directory, year, month_name)
+#                 print("directory_path : ", directory_path)
+                
+#                 # Check if the directory exists
+#                 if not os.path.exists(directory_path):
+#                     return Response("Directory not found.", status=404)
+
+#                 # Query the necessary number of PDFs based on both limit and offset parameters
+#                 order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order=type_of_order).values('pdf_file_name')[offset:limit]
+#                 print("order_details : ", order_details)
+
+#                 # Filter the PDFs based on sr_no values
+#                 pdf_paths = [os.path.join(directory_path, entry['pdf_file_name']) for entry in order_details if entry['pdf_file_name']]
+#                 print("pdf_paths : ", pdf_paths)
+                
+#                 if pdf_paths:
+#                     # Create an HttpResponse object with content type as zip
+#                     response = HttpResponse(content_type='application/zip')
+
+#                     # Set the zip file name
+#                     response['Content-Disposition'] = 'attachment; filename="Sebi_pdf_files.zip"'
+                    
+                    
+#                     # Create a zip file
+#                     with zipfile.ZipFile(response, 'w') as zip_file:
+#                         # Add each PDF file to the zip
+#                         for pdf_path in pdf_paths:
+#                             pdf_file = os.path.join(settings.MEDIA_ROOT, pdf_path + '.pdf')  # Append .pdf if not already present
+#                             if os.path.exists(pdf_file):
+#                                 zip_file.write(pdf_file, arcname=os.path.basename(pdf_file))
+                    
+#                                 print("zip_file : ", zip_file)
+#                             else:
+#                                 # If the PDF file is missing, log an error or return a message
+#                                 print(f"PDF file {pdf_file} is missing from the media folder")                                     # You can log this error or return a response indicating the missing file # For example, you can 
+#                                 return Response({"result": f"PDF file {pdf_file} is missing"}, status=status.HTTP_404_NOT_FOUND)
+#                     return response
+#                 else:
+#                     # If no PDF files were found, return an empty response
+#                     return HttpResponse("No PDF files found.", status=404)
+#             else:
+#                 return HttpResponse("Date parameter is required.", status=status.HTTP_400_BAD_REQUEST)
+#         except ValueError:
+#             return HttpResponse("Invalid limit or offset value, must be an integer", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+#         except ValidationError:
+#             return HttpResponse("Incorrect date format, should be YYYY-MM-DD", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+#         except Exception as e:
+#             print("Error:", e)  # Debugging statement
+#             return HttpResponse("An error occurred.", status=500)
 
            
   
