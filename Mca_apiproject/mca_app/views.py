@@ -47,6 +47,7 @@ from datetime import datetime
 
 from pathlib import Path   
 import tempfile
+import pandas as pd
 
 
 
@@ -192,6 +193,16 @@ class DownloadPDFsView(APIView):
 
                 print("order_details:", order_details)  
                 
+                # Convert the queryset into a Pandas DataFrame for displaying the details in terminal
+                order_details_df = pd.DataFrame(list(order_details.values()))
+                
+                 # Set display options to show all columns in dataframe
+                pd.set_option('display.max_columns', None)
+                
+                # Print the DataFrame
+                print("Order Details DataFrame:")
+                print(order_details_df)
+                
                 pdf_paths = [os.path.join(BASE_DIR2, order.pdf_file_path) for order in order_details]
 
                 print("PDF paths:", pdf_paths)  # Check the PDF paths
@@ -238,7 +249,7 @@ class DownloadPDFsView(APIView):
 #             limit = int(request.GET.get('limit', 50))
 #             offset = int(request.GET.get('offset', 0))
             
-#             # Check if the limit is above 500 and raise an exception if so
+#             # Check if the limit is above 500 and raise an exception 
 #             if limit > 500:
 #                 raise ValueError("Limit should not exceed 500")
 #         except ValueError as ve:
@@ -296,7 +307,7 @@ class DownloadPDFsView(APIView):
 #                     response = HttpResponse(content_type='application/zip')
 
 #                     # Set the zip file name
-#                     response['Content-Disposition'] = 'attachment; filename="Sebi_pdf_files.zip"'
+#                     response['Content-Disposition'] = 'attachment; filename="Mca_pdf_files.zip"'
                     
                     
 #                     # Create a zip file
