@@ -48,6 +48,9 @@ from datetime import datetime
 from pathlib import Path   
 import tempfile
 import pandas as pd
+from django.db.models import Min
+from datetime import datetime, date
+from django.utils import timezone        
 
 
 
@@ -78,7 +81,6 @@ class HTMLRenderer(renderers.BaseRenderer):
 
 
 
-
 def validate_date(date_string):
     try:
         datetime.strptime(date_string, '%Y-%m-%d')
@@ -89,32 +91,44 @@ def validate_date(date_string):
 class Custom404View(APIView):
     def get(self, request, *args, **kwargs):
         return Response({"result": "Resource not found"}, status=status.HTTP_404_NOT_FOUND)
-        
 
-# # Define your API view
+
+
 class GetOrderDateView(APIView):
-
     def get(self, request, *args, **kwargs):
         try:
             limit = int(request.GET.get('limit', 50))
             offset = int(request.GET.get('offset', 0))
         except ValueError:
-            return Response({"result": "Invalid limit or offset value, must be an integer"}, status = status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({"result": "Invalid limit or offset value, must be an integer"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-        date = str(request.GET.get('date', None))
+        date_str = request.GET.get('date')
         type_of_order = kwargs.get('type_of_order')  # Extract 'type_of_order' parameter from URL
 
-        if date:
-            if len(date) != 10 or not validate_date(date):
-                return Response({"result": "Incorrect date format, should be YYYY-MM-DD"}, status = status.HTTP_422_UNPROCESSABLE_ENTITY)
+        if date_str:
+            if len(date_str) != 10 or not validate_date(date_str):
+                return Response({"result": "Incorrect date format, should be YYYY-MM-DD"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
-
+            
+            try:
+                date = datetime.strptime(date_str, '%Y-%m-%d').date()  # Convert string to datetime.date object
+            except ValueError:
+                return Response({"result": "Incorrect date format, should be YYYY-MM-DD"}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
             valid_parameters = {'limit', 'offset', 'date'}
             provided_parameters = set(request.GET.keys())
 
             if not valid_parameters.issuperset(provided_parameters):
-                return Response({"result": "Invalid query parameters, check spelling for given parameters"}, status = status.HTTP_400_BAD_REQUEST)
+                return Response({"result": "Invalid query parameters, check spelling for given parameters"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Query the earliest date_scraped for the given type_of_order
+            earliest_date = mca_orders.objects.filter(type_of_order=type_of_order).aggregate(Min('date_scraped'))['date_scraped__min']
+
+            if earliest_date:
+                earliest_date = earliest_date.date()  # Convert earliest_date to datetime.date object
+                
+                if date < earliest_date:
+                    return Response({"result": f"Data is available from initial scraping date {earliest_date}"}, status=status.HTTP_400_BAD_REQUEST)
             
             try:
                 # Filter queryset based on 'type_of_order' parameter
@@ -127,25 +141,21 @@ class GetOrderDateView(APIView):
                 else:
                     return Response({"result": "Invalid 'type_of_order' parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
-                
-                
-                print(" order_details :", order_details )
                 if len(order_details) > 0:
-                
                     # Create download link for the zip file
-                    total_pdf_download_link = request.build_absolute_uri('/api/v1/{}/download_pdfs/?date={}'.format(type_of_order, date))+ f'&limit={limit}&offset={offset}' 
-
+                    total_pdf_download_link = request.build_absolute_uri('/api/v1/{}/download_pdfs/?date={}'.format(type_of_order, date_str))+ f'&limit={limit}&offset={offset}' 
                     
                     # Return JSON response with results including the total PDF download link
                     return Response({"result": order_details, 'total_count': total_count, 'total_pdf_download_link': total_pdf_download_link}, status=status.HTTP_200_OK)
                 else:
-                    return Response({"result": "No Data Provided in your specific date!!!."}, status = status.HTTP_401_UNAUTHORIZED)
+                    return Response({"result": "No Data Provided in your specific date!!!"}, status=status.HTTP_401_UNAUTHORIZED)
             except TimeoutError:
-                return Response({"result": "timeout error"}, status = status.HTTP_502_BAD_GATEWAY)
+                return Response({"result": "timeout error"}, status=status.HTTP_502_BAD_GATEWAY)
             except Exception as err:
-                return Response({"result": f"An internal server error occurred: {err}"}, status = status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"result": f"An internal server error occurred: {err}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
            raise Http404("Page not found")
+
 
 
 
