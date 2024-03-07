@@ -133,10 +133,10 @@ class GetOrderDateView(APIView):
             try:
                 # Filter queryset based on 'type_of_order' parameter
                 if type_of_order == 'RD':
-                    order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order='RD').values( 'title_of_order', 'type_of_order', 'ROC_RD', 'date_of_order',  'link_to_order',  'pdf_file_path', 'pdf_file_name', 'updated_date',  'date_scraped')[offset:limit]
+                    order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order='RD').values( 'title_of_order', 'type_of_order', 'ROC_RD_LOCATION', 'date_of_order',  'link_to_order',  'pdf_file_path', 'pdf_file_name', 'updated_date',  'date_scraped')[offset:limit]
                     total_count = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order='RD').count()
                 elif type_of_order == 'ROC':
-                    order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order='ROC').values('title_of_order', 'type_of_order', 'ROC_RD', 'date_of_order', 'link_to_order',  'pdf_file_path', 'pdf_file_name', 'updated_date',  'date_scraped')[offset:limit]
+                    order_details = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order='ROC').values('title_of_order', 'type_of_order', 'ROC_RD_LOCATION', 'date_of_order', 'link_to_order',  'pdf_file_path', 'pdf_file_name', 'updated_date',  'date_scraped')[offset:limit]
                     total_count = mca_orders.objects.filter(date_scraped__startswith=date, type_of_order='ROC').count()
                 else:
                     return Response({"result": "Invalid 'type_of_order' parameter"}, status=status.HTTP_400_BAD_REQUEST)
